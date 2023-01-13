@@ -108,7 +108,11 @@ const IndexPage: React.FC = () => {
         <br />
         <Card>
           <Card.Body>
-              <pre>{output}</pre>
+              <pre>
+                <code className="language-python">
+                  {output}
+                </code>
+              </pre>
               {/* Line separating button: */}
               <hr />
               <Button onClick={(event) => {
