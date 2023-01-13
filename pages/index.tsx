@@ -78,11 +78,17 @@ const IndexPage: React.FC = () => {
   // Define display:
   useEffect(() => {
     // Define output:
+    const binary_operators = JSON.stringify(operators).replace(/,/g, ", ") + ", ";
+    const unary_operators = JSON.stringify(unaryOperators).replace(/,/g, ", ") + ", ";
+    // Make these at min length of 20:
+    const binary_operators_padded = binary_operators.padEnd(30, " ");
+    const unary_operators_padded = unary_operators.padEnd(30, " ");
+
     const output = `model = PySRRegressor(
     niterations=${Math.round(10 ** (iterations / 1000))},
     ncyclesperiteration=${Math.round(10 ** (ncyclesperiteration / 1000))},
-    binary_operators=${JSON.stringify(operators).replace(/,/g, ", ")},
-    unary_operators=${JSON.stringify(unaryOperators).replace(/,/g, ", ")},
+    binary_operators=${binary_operators_padded}
+    unary_operators=${unary_operators_padded}
     loss="${loss}",
     maxsize=${complexity},
 )`;
