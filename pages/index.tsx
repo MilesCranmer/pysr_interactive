@@ -1,4 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import Button from 'react-bootstrap/Button';
+import Form from 'react-bootstrap/Form';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Container from 'react-bootstrap/Container';
+import Card from 'react-bootstrap/Card';
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const IndexPage: React.FC = () => {
@@ -40,120 +46,79 @@ const IndexPage: React.FC = () => {
 
   // Define display:
   useEffect(() => {
-    // const output = `Model: ${model}\nOperators: ${operators.join(", ")}\nIterations: ${iterations}`;
-    // Example output:
-    //   model = PySRRegressor(
-    //     niterations=40,  # < Increase me for better results
-    //     binary_operators=["+", "*"],
-    //     unary_operators=[
-    //         "cos",
-    //         "exp",
-    //         "sin",
-    //         "inv(x) = 1/x",
-    //         # ^ Custom operator (julia syntax)
-    //     ],
-    //     extra_sympy_mappings={"inv": lambda x: 1 / x},
-    //     # ^ Define operator for SymPy as well
-    //     loss="loss(x, y) = (x - y)^2",
-    //     # ^ Custom loss function (julia syntax)
-    // )
+    //Stringify with spaces between elements:
     const output = `model = PySRRegressor(
-    model_selection=${model},
+    model_selection="${model}",
     niterations=${iterations},
-    binary_operators=${JSON.stringify(operators)},
-    unary_operators=${JSON.stringify(unaryOperators)},
+    binary_operators=${JSON.stringify(operators).replace(/,/g, ", ")},
+    unary_operators=${JSON.stringify(unaryOperators).replace(/,/g, ", ")},
 )`;
     setOutput(output);
-  }, [model, operators, iterations]);
+  }, [model, operators, unaryOperators, iterations]);
 
   return (
     <div className="d-flex justify-content-center align-items-center">
-      <form>
-        <div className="form-group">
+      <Form>
+        <Form.Group>
           <br />
-          <label className="h5">Model Selection</label>
-          <select
-            className="form-control"
-            value={model}
-            onChange={handleModelChange}
-          >
+          <Form.Label>Model Selection</Form.Label>
+          <Form.Select className="form-control" value={model} onChange={handleModelChange}>
             <option value="accuracy">Accuracy</option>
             <option value="best" selected>Best</option>
             <option value="score">Score</option>
-          </select>
-        </div>
+          </Form.Select>
+        </Form.Group>
         <br />
-        <div className="form-group">
-          {/* <label >Binary Operators</label> */}
-          {/* Same, but with className that makes it bold and larger: */}
-          <label className="h5">Binary Operators</label>
-          <div className="form-row">
-            {availableOperators.map((operator) => (
-              <div className="form-group col-4" key={operator}>
-                <div className="form-check">
-                  <input
-                    type="checkbox"
-                    value={operator}
-                    onChange={handleOperatorChange}
-                    checked={operators.includes(operator)}
-                    className="form-check-input"
-                  />
-                  <label className="form-check-label">{operator}</label>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="form-group">
-          {/* Same for unary operators: */}
-          <label className="h5">Unary Operators</label>
-          <div className="form-row">
-            {availableUnaryOperators.map((operator) => (
-              <div className="form-group col-4" key={operator}>
-                <div className="form-check">
-                  <input
-                    type="checkbox"
-                    value={operator}
-                    onChange={handleUnaryOperatorChange}
-                    checked={unaryOperators.includes(operator)}
-                    className="form-check-input"
-                  />
-                  <label className="form-check-label">{operator}</label>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Form.Group>
+          <Form.Label>Binary Operators</Form.Label>
+          <Container>
+            <Row>
+              {availableOperators.map((operator) => (
+                <Col xs={3}>
+                  <Form.Check type="checkbox" label={operator} value={operator} onChange={handleOperatorChange} checked={operators.includes(operator)} />
+                </Col>
+              ))}
+            </Row>
+          </Container>
+        </Form.Group>
         <br />
-        <div className="form-group">
-          <label className="h5">Number of Iterations</label>
-          <br />
-          <input
-            type="range"
+        <Form.Group>
+          <Form.Label>Unary Operators</Form.Label>
+          <Container>
+            <Row>
+              {availableUnaryOperators.map((operator) => (
+                <Col xs={3}>
+                  <Form.Check type="checkbox" label={operator} value={operator} onChange={handleUnaryOperatorChange} checked={unaryOperators.includes(operator)} />
+                </Col>
+              ))}
+            </Row></Container>
+        </Form.Group>
+        <br />
+        <Form.Group>
+          <Form.Label>Number of Iterations</Form.Label>
+          <Form.Range
             min={1}
             max={1000}
             step={1}
             value={iterations}
             onChange={handleIterationsChange}
           />
-          <input
-            type="number"
-            min={1}
-            max={1000}
-            value={iterations}
-            onChange={handleIterationsChange}
-          />
-        </div>
+          <output className="d-flex justify-content-center">{iterations}</output>
+        </Form.Group>
         <br />
-        <div>
-          <button onClick={(event) => {
-            event.preventDefault();
-            navigator.clipboard.writeText(output);
-          }}>Copy Output</button>
-          <pre>{output}</pre>
-        </div>
-      </form>
-    </div>
+        <Card>
+          <Card.Body>
+              <pre>{output}</pre>
+              {/* Line separating button: */}
+              <hr />
+              <Button onClick={(event) => {
+              event.preventDefault();
+              navigator.clipboard.writeText(output);
+            }}>Copy Output</Button>
+          </Card.Body>
+        </Card>
+      </Form >
+    </div >
   );
 };
 
