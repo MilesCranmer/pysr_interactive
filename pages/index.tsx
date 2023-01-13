@@ -14,7 +14,7 @@ const IndexPage: React.FC = () => {
 
   // Operators:
   const [operators, setOperators] = useState(["+", "-", "*", "/"]);
-  const [unaryOperators, setUnaryOperators] = useState([]);
+  const [unaryOperators, setUnaryOperators] = useState(["cos"]);
 
   // Iterations between 1 and 1000:
   const [iterations, setIterations] = useState(40);
