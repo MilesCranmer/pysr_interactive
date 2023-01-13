@@ -10,16 +10,27 @@ import "bootstrap/dist/css/bootstrap.min.css";
 const IndexPage: React.FC = () => {
   const availableOperators = ["+", "-", "*", "/", "^"];
   const availableUnaryOperators = ["sin", "cos", "exp", "log", "square", "cube", "sqrt", "abs", "tan", "tanh"];
+  const availableLosses = ["L2DistLoss()", "L1DistLoss()"];
 
-  const [model, setModel] = useState('best');
+  // Operators:
   const [operators, setOperators] = useState(["+", "-", "*", "/"]);
   const [unaryOperators, setUnaryOperators] = useState([]);
-  const [iterations, setIterations] = useState(40);
-  const [output, setOutput] = useState("");
 
-  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setModel(e.target.value);
-  };
+  // Iterations between 1 and 1000:
+  const [iterations, setIterations] = useState(40);
+
+  // Complexity between 10 and 50:
+  const [complexity, setComplexity] = useState(20);
+
+  // Losses (just one at a time)
+  const [loss, setLoss] = useState("L2DistLoss()");
+
+  // ncyclesperiteration, between 10 and 10,000:
+  // Actual value stored is log10(true_value) * 1000
+  const [ncyclesperiteration, setNcyclesperiteration] = useState(Math.log10(550) * 1000);
+
+  // Output:
+  const [output, setOutput] = useState("");
 
   const handleOperatorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const operator = e.target.value;
@@ -43,34 +54,40 @@ const IndexPage: React.FC = () => {
     setIterations(parseInt(e.target.value));
   };
 
+  const handleLossChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoss(e.target.value);
+  };
+
+  const handleComplexityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setComplexity(parseInt(e.target.value));
+  };
+
+  const handleNcyclesperiterationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNcyclesperiteration(parseFloat(e.target.value));
+  };
+
 
   // Define display:
   useEffect(() => {
     //Stringify with spaces between elements:
     const output = `model = PySRRegressor(
-    model_selection="${model}",
     niterations=${iterations},
+    ncyclesperiteration=${Math.round(10 ** (ncyclesperiteration / 1000))},
     binary_operators=${JSON.stringify(operators).replace(/,/g, ", ")},
     unary_operators=${JSON.stringify(unaryOperators).replace(/,/g, ", ")},
+    loss="${loss}",
+    maxsize=${complexity},
 )`;
     setOutput(output);
-  }, [model, operators, unaryOperators, iterations]);
+  }, [operators, unaryOperators, iterations, ncyclesperiteration, loss, complexity]);
 
   return (
     <div className="d-flex justify-content-center align-items-center">
       <Form>
-        <Form.Group>
-          <br />
-          <Form.Label>Model Selection</Form.Label>
-          <Form.Select className="form-control" value={model} onChange={handleModelChange}>
-            <option value="accuracy">Accuracy</option>
-            <option value="best" selected>Best</option>
-            <option value="score">Score</option>
-          </Form.Select>
-        </Form.Group>
         <br />
+        {/* Operators: */}
         <Form.Group>
-          <Form.Label>Binary Operators</Form.Label>
+          <Form.Label><u>Binary Operators</u></Form.Label>
           <Container>
             <Row>
               {availableOperators.map((operator) => (
@@ -83,7 +100,7 @@ const IndexPage: React.FC = () => {
         </Form.Group>
         <br />
         <Form.Group>
-          <Form.Label>Unary Operators</Form.Label>
+          <Form.Label><u>Unary Operators</u></Form.Label>
           <Container>
             <Row>
               {availableUnaryOperators.map((operator) => (
@@ -94,8 +111,9 @@ const IndexPage: React.FC = () => {
             </Row></Container>
         </Form.Group>
         <br />
+        {/* Iterations: */}
         <Form.Group>
-          <Form.Label>Number of Iterations</Form.Label>
+          <Form.Label><u>Number of Iterations</u></Form.Label>
           <Form.Range
             min={1}
             max={1000}
@@ -106,16 +124,55 @@ const IndexPage: React.FC = () => {
           <output className="d-flex justify-content-center">{iterations}</output>
         </Form.Group>
         <br />
+        {/* Losses: */}
+        <Form.Group>
+          <Form.Label><u>Loss</u></Form.Label>
+          <Container>
+            <Row>
+              {availableLosses.map((closs) => (
+                <Col xs={6}>
+                  <Form.Check type="radio" label={closs} value={closs} onChange={handleLossChange} checked={loss === closs} />
+                </Col>
+              ))}
+            </Row>
+          </Container>
+        </Form.Group>
+        <br />
+        {/* Complexities */}
+        <Form.Group>
+          <Form.Label><u>Max Size</u></Form.Label>
+          <Form.Range
+            min={10}
+            max={50}
+            step={1}
+            value={complexity}
+            onChange={handleComplexityChange}
+          />
+          <output className="d-flex justify-content-center">{complexity}</output>
+        </Form.Group>
+        <br />
+        {/* ncyclesperiteration */}
+        <Form.Group>
+          <Form.Label><u>Number of Cycles per Iteration</u></Form.Label>
+          <Form.Range
+            min={1000}
+            max={4000}
+            value={ncyclesperiteration}
+            onChange={handleNcyclesperiterationChange}
+          />
+          <output className="d-flex justify-content-center">{Math.round(10 ** (ncyclesperiteration / 1000))}</output>
+        </Form.Group>
+        <br />
         <Card>
           <Card.Body>
-              <pre>
-                <code className="language-python">
-                  {output}
-                </code>
-              </pre>
-              {/* Line separating button: */}
-              <hr />
-              <Button onClick={(event) => {
+            <pre>
+              <code className="language-python">
+                {output}
+              </code>
+            </pre>
+            {/* Line separating button: */}
+            <hr />
+            <Button onClick={(event) => {
               event.preventDefault();
               navigator.clipboard.writeText(output);
             }}>Copy Output</Button>
