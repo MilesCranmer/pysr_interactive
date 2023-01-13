@@ -71,7 +71,7 @@ const IndexPage: React.FC = () => {
   };
 
   useEffect(() => {
-    Prism.highlightElement(document.querySelector("#code-block"));
+    Prism.highlightElement(document.querySelector("#code-block") as Element);
   }, [output]);
 
 
