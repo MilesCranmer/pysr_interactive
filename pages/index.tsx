@@ -5,7 +5,11 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Card from 'react-bootstrap/Card';
+import Prism from 'prismjs';
 import "bootstrap/dist/css/bootstrap.min.css";
+import "prismjs/themes/prism-coy.min.css";
+import "prismjs/components/prism-python.js";
+
 
 const IndexPage: React.FC = () => {
   const availableOperators = ["+", "-", "*", "/", "^"];
@@ -66,10 +70,14 @@ const IndexPage: React.FC = () => {
     setNcyclesperiteration(parseFloat(e.target.value));
   };
 
+  useEffect(() => {
+    Prism.highlightElement(document.querySelector("#code-block"));
+  }, [output]);
+
 
   // Define display:
   useEffect(() => {
-    //Stringify with spaces between elements:
+    // Define output:
     const output = `model = PySRRegressor(
     niterations=${Math.round(10 ** (iterations / 1000))},
     ncyclesperiteration=${Math.round(10 ** (ncyclesperiteration / 1000))},
@@ -79,105 +87,109 @@ const IndexPage: React.FC = () => {
     maxsize=${complexity},
 )`;
     setOutput(output);
+
   }, [operators, unaryOperators, iterations, ncyclesperiteration, loss, complexity]);
 
+
   return (
-    <div className="d-flex justify-content-center align-items-center">
-      <Form>
-        <br />
-        {/* Operators: */}
-        <Form.Group>
-          <Form.Label><u>Binary Operators</u></Form.Label>
-          <Container>
-            <Row>
-              {availableOperators.map((operator) => (
-                <Col xs={3}>
-                  <Form.Check type="checkbox" id={`operator-${operator}`}>
-                    <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
-                    <Form.Check.Input type="checkbox" value={operator} onChange={handleOperatorChange} checked={operators.includes(operator)} />
-                  </Form.Check>
-                </Col>
-              ))}
-            </Row>
-          </Container>
-        </Form.Group>
-        <br />
-        <Form.Group>
-          <Form.Label><u>Unary Operators</u></Form.Label>
-          <Container>
-            <Row>
-              {availableUnaryOperators.map((operator) => (
-                <Col xs={3}>
-                  <Form.Check type="checkbox" id={`operator-${operator}`}>
-                    <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
-                    <Form.Check.Input type="checkbox" value={operator} onChange={handleUnaryOperatorChange} checked={unaryOperators.includes(operator)} />
-                  </Form.Check>
-                </Col>
-              ))}
-            </Row></Container>
-        </Form.Group>
-        <br />
-        {/* Iterations: */}
-        <Form.Group>
-          <Form.Label><u>Number of Iterations</u></Form.Label>
-          <Form.Range
-            min={0}
-            max={4000}
-            step={1}
-            value={iterations}
-            onChange={handleIterationsChange}
-          />
-          <output className="d-flex justify-content-center">{Math.round(10 ** (iterations / 1000))}</output>
-        </Form.Group>
-        <br />
-        {/* Losses: */}
-        <Form.Group>
-          <Form.Label><u>Loss</u></Form.Label>
-          <Container>
-            <Row>
-              {availableLosses.map((closs) => (
-                <Col xs={6}>
-                  <Form.Check type="radio" id={`loss-${closs}`}>
-                    <Form.Check.Label style={{ fontFamily: 'monospace' }}>{closs}</Form.Check.Label>
-                    <Form.Check.Input type="radio" value={closs} onChange={handleLossChange} checked={loss === closs} />
-                  </Form.Check>
-                </Col>
-              ))}
-            </Row>
-          </Container>
-        </Form.Group>
-        <br />
-        {/* Complexities */}
-        <Form.Group>
-          <Form.Label><u>Max Size</u></Form.Label>
-          <Form.Range
-            min={10}
-            max={50}
-            step={1}
-            value={complexity}
-            onChange={handleComplexityChange}
-          />
-          <output className="d-flex justify-content-center">{complexity}</output>
-        </Form.Group>
-        <br />
-        {/* ncyclesperiteration */}
-        <Form.Group>
-          <Form.Label><u>Number of Cycles per Iteration</u></Form.Label>
-          <Form.Range
-            min={1000}
-            max={4000}
-            value={ncyclesperiteration}
-            onChange={handleNcyclesperiterationChange}
-          />
-          <output className="d-flex justify-content-center">{Math.round(10 ** (ncyclesperiteration / 1000))}</output>
-        </Form.Group>
-        <br />
+    <div>
+      <div className="d-flex justify-content-center align-items-center">
+        <Form>
+          <br />
+          {/* Operators: */}
+          <Form.Group>
+            <Form.Label><u>Binary Operators</u></Form.Label>
+            <Container>
+              <Row key={`row-bin-ops`}>
+                {availableOperators.map((operator) => (
+                  <Col xs={3} key={`col-operator-${operator}`}>
+                    <Form.Check type="checkbox" id={`id-operator-${operator}`}>
+                      <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
+                      <Form.Check.Input type="checkbox" value={operator} onChange={handleOperatorChange} checked={operators.includes(operator)} />
+                    </Form.Check>
+                  </Col>
+                ))}
+              </Row>
+            </Container>
+          </Form.Group>
+          <br />
+          <Form.Group>
+            <Form.Label><u>Unary Operators</u></Form.Label>
+            <Container>
+              <Row key={`row-una-ops`}>
+                {availableUnaryOperators.map((operator) => (
+                  <Col xs={3} key={`col-operator-${operator}`}>
+                    <Form.Check type="checkbox" id={`operator-${operator}`}>
+                      <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
+                      <Form.Check.Input type="checkbox" value={operator} onChange={handleUnaryOperatorChange} checked={unaryOperators.includes(operator)} />
+                    </Form.Check>
+                  </Col>
+                ))}
+              </Row></Container>
+          </Form.Group>
+          <br />
+          {/* Iterations: */}
+          <Form.Group>
+            <Form.Label><u>Number of Iterations</u></Form.Label>
+            <Form.Range
+              min={0}
+              max={4000}
+              step={1}
+              value={iterations}
+              onChange={handleIterationsChange}
+            />
+            <output className="d-flex justify-content-center">{Math.round(10 ** (iterations / 1000))}</output>
+          </Form.Group>
+          <br />
+          {/* Losses: */}
+          <Form.Group>
+            <Form.Label><u>Loss</u></Form.Label>
+            <Container>
+              <Row key={`row-losses`}>
+                {availableLosses.map((closs) => (
+                  <Col xs={6} key={`col-loss-${closs}`}>
+                    <Form.Check type="radio" id={`loss-${closs}`}>
+                      <Form.Check.Label style={{ fontFamily: 'monospace' }}>{closs}</Form.Check.Label>
+                      <Form.Check.Input type="radio" value={closs} onChange={handleLossChange} checked={loss === closs} />
+                    </Form.Check>
+                  </Col>
+                ))}
+              </Row>
+            </Container>
+          </Form.Group>
+          <br />
+          {/* Complexities */}
+          <Form.Group>
+            <Form.Label><u>Max Size</u></Form.Label>
+            <Form.Range
+              min={10}
+              max={50}
+              step={1}
+              value={complexity}
+              onChange={handleComplexityChange}
+            />
+            <output className="d-flex justify-content-center">{complexity}</output>
+          </Form.Group>
+          <br />
+          {/* ncyclesperiteration */}
+          <Form.Group>
+            <Form.Label><u>Number of Cycles per Iteration</u></Form.Label>
+            <Form.Range
+              min={1000}
+              max={4000}
+              value={ncyclesperiteration}
+              onChange={handleNcyclesperiterationChange}
+            />
+            <output className="d-flex justify-content-center">{Math.round(10 ** (ncyclesperiteration / 1000))}</output>
+          </Form.Group>
+          <br />
+        </Form >
+      </div >
+      <div className="d-flex justify-content-center align-items-center">
         <Card>
           <Card.Body>
             <pre>
-              <code className="language-python">
-                {output}
-              </code>
+              <code className="language-python" id="code-block">{output}</code>
             </pre>
             {/* Line separating button: */}
             <hr />
@@ -187,8 +199,8 @@ const IndexPage: React.FC = () => {
             }}>Copy Definition</Button>
           </Card.Body>
         </Card>
-      </Form >
-    </div >
+      </div>
+    </div>
   );
 };
 
