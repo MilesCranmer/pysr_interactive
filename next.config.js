@@ -4,7 +4,7 @@
  * @type {import('next').NextConfig}
  **/
 const nextConfig = {
-  basePath: '/pysr_interactive',
+  basePath: '',
 }
 
 module.exports = nextConfig
