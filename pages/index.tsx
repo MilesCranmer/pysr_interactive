@@ -17,7 +17,7 @@ const IndexPage: React.FC = () => {
   const [unaryOperators, setUnaryOperators] = useState(["cos"]);
 
   // Iterations between 1 and 1000:
-  const [iterations, setIterations] = useState(40);
+  const [iterations, setIterations] = useState(Math.log10(40) * 1000);
 
   // Complexity between 10 and 50:
   const [complexity, setComplexity] = useState(20);
@@ -51,7 +51,7 @@ const IndexPage: React.FC = () => {
   };
 
   const handleIterationsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIterations(parseInt(e.target.value));
+    setIterations(parseFloat(e.target.value));
   };
 
   const handleLossChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +71,7 @@ const IndexPage: React.FC = () => {
   useEffect(() => {
     //Stringify with spaces between elements:
     const output = `model = PySRRegressor(
-    niterations=${iterations},
+    niterations=${Math.round(10 ** (iterations / 1000))},
     ncyclesperiteration=${Math.round(10 ** (ncyclesperiteration / 1000))},
     binary_operators=${JSON.stringify(operators).replace(/,/g, ", ")},
     unary_operators=${JSON.stringify(unaryOperators).replace(/,/g, ", ")},
@@ -121,13 +121,13 @@ const IndexPage: React.FC = () => {
         <Form.Group>
           <Form.Label><u>Number of Iterations</u></Form.Label>
           <Form.Range
-            min={1}
-            max={1000}
+            min={0}
+            max={4000}
             step={1}
             value={iterations}
             onChange={handleIterationsChange}
           />
-          <output className="d-flex justify-content-center">{iterations}</output>
+          <output className="d-flex justify-content-center">{Math.round(10 ** (iterations / 1000))}</output>
         </Form.Group>
         <br />
         {/* Losses: */}
@@ -184,7 +184,7 @@ const IndexPage: React.FC = () => {
             <Button onClick={(event) => {
               event.preventDefault();
               navigator.clipboard.writeText(output);
-            }}>Copy Output</Button>
+            }}>Copy Definition</Button>
           </Card.Body>
         </Card>
       </Form >
