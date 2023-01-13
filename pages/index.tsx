@@ -92,7 +92,10 @@ const IndexPage: React.FC = () => {
             <Row>
               {availableOperators.map((operator) => (
                 <Col xs={3}>
-                  <Form.Check type="checkbox" label={operator} value={operator} onChange={handleOperatorChange} checked={operators.includes(operator)} />
+                  <Form.Check type="checkbox" id={`operator-${operator}`}>
+                    <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
+                    <Form.Check.Input type="checkbox" value={operator} onChange={handleOperatorChange} checked={operators.includes(operator)} />
+                  </Form.Check>
                 </Col>
               ))}
             </Row>
@@ -105,7 +108,10 @@ const IndexPage: React.FC = () => {
             <Row>
               {availableUnaryOperators.map((operator) => (
                 <Col xs={3}>
-                  <Form.Check type="checkbox" label={operator} value={operator} onChange={handleUnaryOperatorChange} checked={unaryOperators.includes(operator)} />
+                  <Form.Check type="checkbox" id={`operator-${operator}`}>
+                    <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
+                    <Form.Check.Input type="checkbox" value={operator} onChange={handleUnaryOperatorChange} checked={unaryOperators.includes(operator)} />
+                  </Form.Check>
                 </Col>
               ))}
             </Row></Container>
@@ -131,7 +137,10 @@ const IndexPage: React.FC = () => {
             <Row>
               {availableLosses.map((closs) => (
                 <Col xs={6}>
-                  <Form.Check type="radio" label={closs} value={closs} onChange={handleLossChange} checked={loss === closs} />
+                  <Form.Check type="radio" id={`loss-${closs}`}>
+                    <Form.Check.Label style={{ fontFamily: 'monospace' }}>{closs}</Form.Check.Label>
+                    <Form.Check.Input type="radio" value={closs} onChange={handleLossChange} checked={loss === closs} />
+                  </Form.Check>
                 </Col>
               ))}
             </Row>
