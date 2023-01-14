@@ -25,7 +25,7 @@ type Parameter = {
   log?: boolean; // If the range is logarithmic, this is true
   multiple?: boolean; // If the parameter can have multiple values, this is true
   boolean?: boolean; // If the parameter is a boolean, this is true
-  selectable?: boolean; // If the parameter is selectable, this is true
+  selectable?: boolean; // If the parameter is selectable, this is true. Make default=0 for null state.
 }
 
 // Now we can create a list of parameters, with their types, descriptions, etc.
@@ -39,10 +39,10 @@ const _parameters: Parameter[] = [
   { name: "populations", type: "int", description: "", default: 15, range: [2, 1000], log: true },
   { name: "population_size", type: "int", description: "", default: 33, range: [5, 1000], log: true },
   { name: "maxsize", type: "int", description: "", default: 20, range: [10, 100], log: false },
-  { name: "timeout_in_seconds", type: "int", description: "", default: 10, range: [1, 100000], log: true, selectable: true },
+  { name: "timeout_in_seconds", type: "int", description: "", default: 1, range: [1, 10000], log: true, selectable: true },
   { name: "loss", type: "str", description: "", default: "L2DistLoss()", choices: ["L2DistLoss()", "L1DistLoss()"] },
   { name: "denoise", type: "bool", description: "", default: false, boolean: true },
-  { name: "select_k_features", type: "int", description: "", default: 3, range: [2, 10], log: false, selectable: true },
+  { name: "select_k_features", type: "int", description: "", default: 0, range: [0, 10], log: false, selectable: true },
   { name: "precision", type: "int", description: "", default: 32, choices: [16, 32, 64] },
   { name: "turbo", type: "bool", description: "", default: false, boolean: true },
   { name: "parsimony", type: "float", description: "", default: 0.0032, range: [0.00001, 1000.000], log: true },
@@ -160,7 +160,7 @@ const IndexPage: React.FC = () => {
       }
 
       // If equal to the default, don't include it.
-      if (parameter.default == value) {
+      if (parameter.default == value && !(parameter.name.includes("operators"))) {
         continue;
       }
 
@@ -242,9 +242,12 @@ const IndexPage: React.FC = () => {
         </div>
       );
     } else if (parameter.range !== undefined) {
-      let value = parameter.log ? decodeFloatLog(parameterDict[parameter.name][0]) : parameterDict[parameter.name][0];
+      let value: any = parameter.log ? decodeFloatLog(parameterDict[parameter.name][0]) : parameterDict[parameter.name][0];
       if (parameter.type === "int") {
         value = Math.round(value);
+      }
+      if (parameter.selectable === true && ((parameter.log === true && value === 1) || (parameter.log === false && value === 0))) {
+        value = "Off";
       }
       curElements.push(
         <div>
