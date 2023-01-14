@@ -5,6 +5,8 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Card from 'react-bootstrap/Card';
+import Popover from 'react-bootstrap/Popover';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Prism from 'prismjs';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "prismjs/themes/prism-coy.min.css";
@@ -189,8 +191,22 @@ const IndexPage: React.FC = () => {
   for (let parameter of parameters) {
     let curElements = [];
 
+    const popover = (
+      <Popover id="popover-basic">
+        <Popover.Header as="h3" style={{ fontFamily: 'monospace' }}>{parameter.name}</Popover.Header>
+        <Popover.Body>
+          {parameter.description}
+        </Popover.Body>
+      </Popover>
+    );
     // Title:
-    curElements.push(<Form.Label><u>{parameter.full_name}</u></Form.Label>);
+    curElements.push(
+      <Form.Label>
+        <OverlayTrigger trigger="hover" placement="right" overlay={popover}>
+          <u>{parameter.full_name}</u>
+        </OverlayTrigger>
+      </Form.Label>
+    );
 
     if (parameter.choices !== undefined && parameter.type.startsWith("list")) {
 
