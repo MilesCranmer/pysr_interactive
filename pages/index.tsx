@@ -11,6 +11,7 @@ import Prism from 'prismjs';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "prismjs/themes/prism-coy.min.css";
 import "prismjs/components/prism-python.js";
+import { createDescriptions } from './params';
 
 // Let's create a type to hold each of these parameters, along with
 //  a specification of their type, and how they should be displayed, as in
@@ -49,9 +50,14 @@ const _parameters: Parameter[] = [
   { name: "parsimony", type: "float", description: "", default: 0.0032, range: [0.00001, 1000.000], log: true },
 ]
 
+// Include descriptions using getDescriptions(), which returns a dict { [key: string]: string }
+const descriptions: { [key: string]: any } = createDescriptions();
+
 const parameters = _parameters.map((param) => {
   const full_name = param.name.replace(/_/g, ' ').replace(/(^|\s)[a-z]/g, (match) => match.toUpperCase());
-  return { ...param, full_name }
+  // return { ...param, full_name }
+  const description = descriptions[param.name];
+  return { ...param, full_name, description }
 });
 
 function encodeFloatLog(value: number) {
