@@ -10,65 +10,134 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "prismjs/themes/prism-coy.min.css";
 import "prismjs/components/prism-python.js";
 
+// Let's create a type to hold each of these parameters, along with
+//  a specification of their type, and how they should be displayed, as in
+//  with a range, with a choice, with multiple choice, with a boolean, etc.
+
+type Parameter = {
+  name: string; // The name of the parameter
+  type: string; // The Python type of the parameter
+  description: string; // A description of the parameter
+  default?: any; // The default value of the parameter
+  full_name?: string; // The full name of the parameter, if it is a nested parameter
+  choices?: any[]; // If the parameter has a choice, this is the list of choices
+  range?: [number, number]; // If the parameter has a range, this is the range
+  log?: boolean; // If the range is logarithmic, this is true
+  multiple?: boolean; // If the parameter can have multiple values, this is true
+  boolean?: boolean; // If the parameter is a boolean, this is true
+  selectable?: boolean; // If the parameter is selectable, this is true
+}
+
+// Now we can create a list of parameters, with their types, descriptions, etc.
+//  We will leave the descriptions blank for now, and pull them later from the Python code.
+const _parameters: Parameter[] = [
+  { name: "model_selection", type: "str", description: "", default: "best", choices: ["best", "accuracy", "score"] },
+  { name: "binary_operators", type: "list[str]", description: "", default: ["+", "-", "*", "/"], choices: ["+", "-", "*", "/", "^"], multiple: true },
+  { name: "unary_operators", type: "list[str]", description: "", default: [], choices: ["sin", "cos", "exp", "log", "square", "cube", "sqrt", "abs", "tan", "tanh"], multiple: true },
+  { name: "niterations", type: "int", description: "", default: 40, range: [1, 10000], log: true },
+  { name: "ncyclesperiteration", type: "int", description: "", default: 550, range: [1, 10000], log: true },
+  { name: "populations", type: "int", description: "", default: 15, range: [2, 1000], log: true },
+  { name: "population_size", type: "int", description: "", default: 33, range: [5, 1000], log: true },
+  { name: "maxsize", type: "int", description: "", default: 20, range: [10, 100], log: false },
+  { name: "timeout_in_seconds", type: "int", description: "", default: 10, range: [1, 100000], log: true, selectable: true },
+  { name: "loss", type: "str", description: "", default: "L2DistLoss()", choices: ["L2DistLoss()", "L1DistLoss()"] },
+  { name: "denoise", type: "bool", description: "", default: false, boolean: true },
+  { name: "select_k_features", type: "int", description: "", default: 3, range: [2, 10], log: false, selectable: true },
+  { name: "precision", type: "int", description: "", default: 32, choices: [16, 32, 64] },
+  { name: "turbo", type: "bool", description: "", default: false, boolean: true },
+  { name: "parsimony", type: "float", description: "", default: 0.0032, range: [0.00001, 1000.000], log: true },
+]
+
+const parameters = _parameters.map((param) => {
+  const full_name = param.name.replace(/_/g, ' ').replace(/(^|\s)[a-z]/g, (match) => match.toUpperCase());
+  return { ...param, full_name }
+});
+
+function encodeFloatLog(value: number) {
+  return Math.log10(value) * 1000;
+}
+
+function decodeFloatLog(value: number) {
+  return Math.pow(10, value / 1000).toPrecision(3);
+}
+
 
 const IndexPage: React.FC = () => {
-  const availableOperators = ["+", "-", "*", "/", "^"];
-  const availableUnaryOperators = ["sin", "cos", "exp", "log", "square", "cube", "sqrt", "abs", "tan", "tanh"];
-  const availableLosses = ["L2DistLoss()", "L1DistLoss()"];
 
-  // Operators:
-  const [operators, setOperators] = useState(["+", "-", "*", "/"]);
-  const [unaryOperators, setUnaryOperators] = useState(["cos"]);
+  // Create a state variable for each parameter, and a function to update it,
+  // in a dictionary, so we can access them by name.
+  const parameterDict: { [key: string]: [any, (value: any) => void] } = {};
 
-  // Iterations between 1 and 1000:
-  const [iterations, setIterations] = useState(Math.log10(40) * 1000);
+  // Load:
+  parameters.forEach((parameter) => {
+    let paramDefault = parameter.default;
+    if (parameter.range !== undefined && parameter.log) {
+      paramDefault = encodeFloatLog(paramDefault);
+    }
+    const [value, setValue] = useState(paramDefault);
+    parameterDict[parameter.name] = [value, setValue];
+  });
 
-  // Complexity between 10 and 50:
-  const [complexity, setComplexity] = useState(20);
 
-  // Losses (just one at a time)
-  const [loss, setLoss] = useState("L2DistLoss()");
+  // Dictionary of functions to handle updates:
+  const parameterHandlers: { [key: string]: (value: any) => void } = {};
 
-  // ncyclesperiteration, between 10 and 10,000:
-  // Actual value stored is log10(true_value) * 1000
-  const [ncyclesperiteration, setNcyclesperiteration] = useState(Math.log10(550) * 1000);
+  // Load handlers
+  parameters.forEach((parameter) => {
+    const [curValue, setValue] = parameterDict[parameter.name];
+    if (parameter.choices !== undefined && parameter.type.startsWith("list")) {
+
+      // List of choices (pick many)
+      const handler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const curValues = curValue as any[];
+        const value = e.target.value;
+        if (e.target.checked) {
+          setValue([...curValues, value]);
+        } else {
+          setValue(curValues.filter((v) => v !== value));
+        }
+      };
+      parameterHandlers[parameter.name] = handler;
+
+    } else if (parameter.choices !== undefined) {
+
+      // List of choices (pick one)
+      const handler = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setValue(e.target.value);
+      };
+      parameterHandlers[parameter.name] = handler;
+
+    } else if (parameter.type === "float" || parameter.log == true) {
+
+      // Number (like a range)
+      const handler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue(parseFloat(e.target.value));
+      };
+      parameterHandlers[parameter.name] = handler;
+    } else if (parameter.type === "int") {
+
+      // Integer
+      const handler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue(parseInt(e.target.value));
+      };
+      parameterHandlers[parameter.name] = handler;
+
+    } else if (parameter.type === "str") {
+      const handler = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setValue(e.target.value);
+      };
+      parameterHandlers[parameter.name] = handler;
+    } else if (parameter.type === "bool") {
+      const handler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue(e.target.checked);
+      };
+      parameterHandlers[parameter.name] = handler;
+    };
+  });
 
   // Output:
   const [output, setOutput] = useState("");
 
-  const handleOperatorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const operator = e.target.value;
-    if (e.target.checked) {
-      setOperators([...operators, operator]);
-    } else {
-      setOperators(operators.filter((o) => o !== operator));
-    }
-  };
-
-  const handleUnaryOperatorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const operator = e.target.value;
-    if (e.target.checked) {
-      setUnaryOperators([...unaryOperators, operator]);
-    } else {
-      setUnaryOperators(unaryOperators.filter((o) => o !== operator));
-    }
-  };
-
-  const handleIterationsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIterations(parseFloat(e.target.value));
-  };
-
-  const handleLossChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLoss(e.target.value);
-  };
-
-  const handleComplexityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setComplexity(parseInt(e.target.value));
-  };
-
-  const handleNcyclesperiterationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNcyclesperiteration(parseFloat(e.target.value));
-  };
 
   useEffect(() => {
     Prism.highlightElement(document.querySelector("#code-block") as Element);
@@ -77,136 +146,176 @@ const IndexPage: React.FC = () => {
 
   // Define display:
   useEffect(() => {
-    // Define output:
-    const binary_operators = JSON.stringify(operators).replace(/,/g, ", ") + ", ";
-    const unary_operators = JSON.stringify(unaryOperators).replace(/,/g, ", ") + ", ";
-    // Make these at min length:
-    const binary_operators_padded = binary_operators.padEnd(50, " ");
 
-    const output = `model = PySRRegressor(
-    niterations=${Math.round(10 ** (iterations / 1000))},
-    ncyclesperiteration=${Math.round(10 ** (ncyclesperiteration / 1000))},
-    binary_operators=${binary_operators_padded}
-    unary_operators=${unary_operators}
-    loss="${loss}",
-    maxsize=${complexity},
-)`;
+    let output = `model = PySRRegressor(`;
+    for (let parameter of parameters) {
+
+      let [value, _setValue] = parameterDict[parameter.name];
+
+      if (parameter.range !== undefined && parameter.log) {
+        value = decodeFloatLog(value);
+      }
+      if (parameter.type === "int") {
+        value = Math.round(value);
+      }
+
+      // If equal to the default, don't include it.
+      if (parameter.default == value) {
+        continue;
+      }
+
+      if (parameter.choices !== undefined && parameter.type.startsWith("list")) {
+        output += `\n    ${parameter.name}=${JSON.stringify(value as string[]).replace(/,/g, ", ") + ", "}`;
+      } else if (parameter.choices !== undefined && parameter.type === "str") {
+        output += `\n    ${parameter.name}="${value}",`;
+      } else if (parameter.choices !== undefined) {
+        output += `\n    ${parameter.name}=${value},`;
+      } else if (parameter.type === "int") {
+        output += `\n    ${parameter.name}=${value},`;
+      } else if (parameter.type === "float") {
+        output += `\n    ${parameter.name}=${value},`;
+      } else if (parameter.type === "str") {
+        output += `\n    ${parameter.name}="${value}",`;
+      } else if (parameter.type === "bool") {
+        output += `\n    ${parameter.name}=${value ? "True" : "False"},`;
+      };
+    };
+    output += `\n)`;
     setOutput(output);
 
-  }, [operators, unaryOperators, iterations, ncyclesperiteration, loss, complexity]);
+  }, [parameterDict]);
 
+  let formElements = [];
 
-  return (
+  for (let parameter of parameters) {
+    let curElements = [];
+
+    // Title:
+    curElements.push(<Form.Label><u>{parameter.full_name}</u></Form.Label>);
+
+    if (parameter.choices !== undefined && parameter.type.startsWith("list")) {
+
+      // List of choices:
+      curElements.push(
+        <div>
+          <Container>
+            <Row key={`row-${parameter.name}`}>
+              {(parameter.choices as any[]).map((choice) => (
+                <Col xs={3} key={`col-${parameter.name}-${choice}`}>
+                  <Form.Check type="checkbox" id={`id-operator-${choice}`}>
+                    <Form.Check.Label style={{ fontFamily: 'monospace' }}>{choice}</Form.Check.Label>
+                    <Form.Check.Input
+                      type="checkbox"
+                      value={choice}
+                      onChange={parameterHandlers[parameter.name]}
+                      checked={parameterDict[parameter.name][0].includes(choice)}
+                    />
+                  </Form.Check>
+                </Col>
+              ))}
+            </Row>
+          </Container>
+        </div>
+      );
+    } else if (parameter.choices !== undefined) {
+
+      // Only one choise among list:
+      curElements.push(
+        <div>
+          <Container>
+            <Row key={`row-${parameter.name}`}>
+              {(parameter.choices as any[]).map((choice) => (
+                <Col xs={3} key={`col-${parameter.name}-${choice}`}>
+                  <Form.Check type="radio" id={`id-operator-${choice}`}>
+                    <Form.Check.Label>{choice}</Form.Check.Label>
+                    <Form.Check.Input
+                      type="radio"
+                      value={choice}
+                      onChange={parameterHandlers[parameter.name]}
+                      checked={parameterDict[parameter.name][0] == choice}
+                    />
+                  </Form.Check>
+                </Col>
+              ))}
+            </Row>
+          </Container>
+        </div>
+      );
+    } else if (parameter.range !== undefined) {
+      let value = parameter.log ? decodeFloatLog(parameterDict[parameter.name][0]) : parameterDict[parameter.name][0];
+      if (parameter.type === "int") {
+        value = Math.round(value);
+      }
+      curElements.push(
+        <div>
+          <Form.Range
+            min={parameter.log ? encodeFloatLog(parameter.range[0]) : parameter.range[0]}
+            max={parameter.log ? encodeFloatLog(parameter.range[1]) : parameter.range[1]}
+            step={1}
+            value={parameterDict[parameter.name][0]}
+            onChange={parameterHandlers[parameter.name]}
+          />
+          <output className="d-flex justify-content-center">{value}</output>
+        </div>
+      );
+    } else if (parameter.type === "bool") {
+      curElements.push(
+        <div>
+          <Form.Check type="switch" id={`id-operator-${parameter.name}`}>
+            <Form.Check.Input
+              type="checkbox"
+              onChange={parameterHandlers[parameter.name]}
+              checked={parameterDict[parameter.name][0]}
+            />
+          </Form.Check>
+        </div>
+      );
+    }
+    formElements.push(
+      <div>
+        {curElements}
+      </div>
+    );
+    formElements.push(<br />);
+  }
+
+  const form = (
+    <Form>
+      {formElements.map((el) => (
+        <Form.Group>
+          {el}
+        </Form.Group>
+      ))}
+    </Form>
+  )
+
+  const output_card = (
+    <Card>
+      <Card.Body>
+        <pre>
+          <code className="language-python" id="code-block">{output}</code>
+        </pre>
+        <hr />
+        <Button onClick={(event) => {
+          event.preventDefault();
+          navigator.clipboard.writeText(output);
+        }}>Copy Definition</Button>
+      </Card.Body>
+    </Card>
+  );
+
+  let out = (
     <div>
       <div className="d-flex justify-content-center align-items-center">
-        <Form>
-          <br />
-          {/* Operators: */}
-          <Form.Group>
-            <Form.Label><u>Binary Operators</u></Form.Label>
-            <Container>
-              <Row key={`row-bin-ops`}>
-                {availableOperators.map((operator) => (
-                  <Col xs={3} key={`col-operator-${operator}`}>
-                    <Form.Check type="checkbox" id={`id-operator-${operator}`}>
-                      <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
-                      <Form.Check.Input type="checkbox" value={operator} onChange={handleOperatorChange} checked={operators.includes(operator)} />
-                    </Form.Check>
-                  </Col>
-                ))}
-              </Row>
-            </Container>
-          </Form.Group>
-          <br />
-          <Form.Group>
-            <Form.Label><u>Unary Operators</u></Form.Label>
-            <Container>
-              <Row key={`row-una-ops`}>
-                {availableUnaryOperators.map((operator) => (
-                  <Col xs={3} key={`col-operator-${operator}`}>
-                    <Form.Check type="checkbox" id={`operator-${operator}`}>
-                      <Form.Check.Label style={{ fontFamily: 'monospace' }}>{operator}</Form.Check.Label>
-                      <Form.Check.Input type="checkbox" value={operator} onChange={handleUnaryOperatorChange} checked={unaryOperators.includes(operator)} />
-                    </Form.Check>
-                  </Col>
-                ))}
-              </Row></Container>
-          </Form.Group>
-          <br />
-          {/* Iterations: */}
-          <Form.Group>
-            <Form.Label><u>Number of Iterations</u></Form.Label>
-            <Form.Range
-              min={0}
-              max={4000}
-              step={1}
-              value={iterations}
-              onChange={handleIterationsChange}
-            />
-            <output className="d-flex justify-content-center">{Math.round(10 ** (iterations / 1000))}</output>
-          </Form.Group>
-          <br />
-          {/* Losses: */}
-          <Form.Group>
-            <Form.Label><u>Loss</u></Form.Label>
-            <Container>
-              <Row key={`row-losses`}>
-                {availableLosses.map((closs) => (
-                  <Col xs={6} key={`col-loss-${closs}`}>
-                    <Form.Check type="radio" id={`loss-${closs}`}>
-                      <Form.Check.Label style={{ fontFamily: 'monospace' }}>{closs}</Form.Check.Label>
-                      <Form.Check.Input type="radio" value={closs} onChange={handleLossChange} checked={loss === closs} />
-                    </Form.Check>
-                  </Col>
-                ))}
-              </Row>
-            </Container>
-          </Form.Group>
-          <br />
-          {/* Complexities */}
-          <Form.Group>
-            <Form.Label><u>Max Size</u></Form.Label>
-            <Form.Range
-              min={10}
-              max={50}
-              step={1}
-              value={complexity}
-              onChange={handleComplexityChange}
-            />
-            <output className="d-flex justify-content-center">{complexity}</output>
-          </Form.Group>
-          <br />
-          {/* ncyclesperiteration */}
-          <Form.Group>
-            <Form.Label><u>Number of Cycles per Iteration</u></Form.Label>
-            <Form.Range
-              min={1000}
-              max={4000}
-              value={ncyclesperiteration}
-              onChange={handleNcyclesperiterationChange}
-            />
-            <output className="d-flex justify-content-center">{Math.round(10 ** (ncyclesperiteration / 1000))}</output>
-          </Form.Group>
-          <br />
-        </Form >
-      </div >
+        {form}
+      </div>
       <div className="d-flex justify-content-center align-items-center">
-        <Card>
-          <Card.Body>
-            <pre>
-              <code className="language-python" id="code-block">{output}</code>
-            </pre>
-            {/* Line separating button: */}
-            <hr />
-            <Button onClick={(event) => {
-              event.preventDefault();
-              navigator.clipboard.writeText(output);
-            }}>Copy Definition</Button>
-          </Card.Body>
-        </Card>
+        {output_card}
       </div>
     </div>
   );
+
+  return out;
 };
 
 export default IndexPage;
