@@ -332,7 +332,7 @@ const IndexPage: React.FC = () => {
           <Container>
             <Row key={`row-${parameter.name}`}>
               {(parameter.choices as any[]).map((choice) => (
-                <Col xs={3} key={`col-${parameter.name}-${choice}`}>
+                <Col xs={4} key={`col-${parameter.name}-${choice}`}>
                   <Form.Check type="radio" id={`id-operator-${choice}`}>
                     <Form.Check.Label>{choice}</Form.Check.Label>
                     <Form.Check.Input
