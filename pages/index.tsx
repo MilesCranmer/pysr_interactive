@@ -23,7 +23,6 @@ type Parameter = {
   choices?: any[]; // If the parameter has a choice, this is the list of choices
   range?: [number, number]; // If the parameter has a range, this is the range
   log?: boolean; // If the range is logarithmic, this is true
-  multiple?: boolean; // If the parameter can have multiple values, this is true
   boolean?: boolean; // If the parameter is a boolean, this is true
   selectable?: boolean; // If the parameter is selectable, this is true. Make default=0 for null state.
 }
@@ -32,8 +31,8 @@ type Parameter = {
 //  We will leave the descriptions blank for now, and pull them later from the Python code.
 const _parameters: Parameter[] = [
   { name: "model_selection", type: "str", description: "", default: "best", choices: ["best", "accuracy", "score"] },
-  { name: "binary_operators", type: "list[str]", description: "", default: ["+", "-", "*", "/"], choices: ["+", "-", "*", "/", "^"], multiple: true },
-  { name: "unary_operators", type: "list[str]", description: "", default: [], choices: ["sin", "cos", "exp", "log", "square", "cube", "sqrt", "abs", "tan", "tanh"], multiple: true },
+  { name: "binary_operators", type: "list[str]", description: "", default: ["+", "-", "*", "/"], choices: ["+", "-", "*", "/", "^"] },
+  { name: "unary_operators", type: "list[str]", description: "", default: [], choices: ["sin", "cos", "exp", "log", "square", "cube", "sqrt", "abs", "tan", "tanh"] },
   { name: "niterations", type: "int", description: "", default: 40, range: [1, 10000], log: true },
   { name: "ncyclesperiteration", type: "int", description: "", default: 550, range: [1, 10000], log: true },
   { name: "populations", type: "int", description: "", default: 15, range: [2, 1000], log: true },
